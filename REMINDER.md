@@ -1,5 +1,5 @@
 
-In stable-diffusion-webui devi eseguire:
+`stable-diffusion-webui` should run in parallel.
 
 python3 launch.py --precision full --no-half --skip-torch-cuda-test --api
 

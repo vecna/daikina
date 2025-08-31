@@ -1,0 +1,12 @@
+{
+  "steps": 30,
+  "cfg_scale": 8.0,
+  "sampler_name": "DPM++ 2M Karras",
+  "width": 800,
+  "height": 1024,
+  "seed": -1,
+  "batch_size": 1,
+  "restore_faces": true,
+  "tiling": false,
+  "n_iter": 1
+}
