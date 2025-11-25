@@ -1,0 +1,120 @@
+{
+  "request": {
+    "prompt": "raw ground meat, bloody, plate",
+    "steps": 38,
+    "cfg_scale": 11,
+    "sampler_name": "DPM++ 2M Karras",
+    "width": 800,
+    "height": 1024,
+    "seed": -1,
+    "batch_size": 1,
+    "restore_faces": true,
+    "tiling": false,
+    "n_iter": 1
+  },
+  "data": {
+    "parameters": {
+      "prompt": "raw ground meat, bloody, plate",
+      "negative_prompt": "",
+      "styles": null,
+      "seed": -1,
+      "subseed": -1,
+      "subseed_strength": 0,
+      "seed_resize_from_h": -1,
+      "seed_resize_from_w": -1,
+      "sampler_name": "DPM++ 2M Karras",
+      "scheduler": null,
+      "batch_size": 1,
+      "n_iter": 1,
+      "steps": 38,
+      "cfg_scale": 11,
+      "width": 800,
+      "height": 1024,
+      "restore_faces": true,
+      "tiling": false,
+      "do_not_save_samples": false,
+      "do_not_save_grid": false,
+      "eta": null,
+      "denoising_strength": null,
+      "s_min_uncond": null,
+      "s_churn": null,
+      "s_tmax": null,
+      "s_tmin": null,
+      "s_noise": null,
+      "override_settings": null,
+      "override_settings_restore_afterwards": true,
+      "refiner_checkpoint": null,
+      "refiner_switch_at": null,
+      "disable_extra_networks": false,
+      "firstpass_image": null,
+      "comments": null,
+      "enable_hr": false,
+      "firstphase_width": 0,
+      "firstphase_height": 0,
+      "hr_scale": 2,
+      "hr_upscaler": null,
+      "hr_second_pass_steps": 0,
+      "hr_resize_x": 0,
+      "hr_resize_y": 0,
+      "hr_checkpoint_name": null,
+      "hr_sampler_name": null,
+      "hr_scheduler": null,
+      "hr_prompt": "",
+      "hr_negative_prompt": "",
+      "force_task_id": null,
+      "sampler_index": "Euler",
+      "script_name": null,
+      "script_args": [],
+      "send_images": true,
+      "save_images": false,
+      "alwayson_scripts": {},
+      "infotext": null
+    },
+    "info": {
+      "prompt": "raw ground meat, bloody, plate",
+      "all_prompts": [
+        "raw ground meat, bloody, plate"
+      ],
+      "negative_prompt": "",
+      "all_negative_prompts": [
+        ""
+      ],
+      "seed": 3431567733,
+      "all_seeds": [
+        3431567733
+      ],
+      "subseed": 4291822386,
+      "all_subseeds": [
+        4291822386
+      ],
+      "subseed_strength": 0,
+      "width": 800,
+      "height": 1024,
+      "sampler_name": "DPM++ 2M",
+      "cfg_scale": 11,
+      "steps": 38,
+      "batch_size": 1,
+      "restore_faces": true,
+      "face_restoration_model": "CodeFormer",
+      "sd_model_name": "ponyDiffusionV6XL_v6StartWithThisOne",
+      "sd_model_hash": "67ab2fd8ec",
+      "sd_vae_name": null,
+      "sd_vae_hash": null,
+      "seed_resize_from_w": -1,
+      "seed_resize_from_h": -1,
+      "denoising_strength": null,
+      "extra_generation_params": {
+        "Schedule type": "Karras"
+      },
+      "index_of_first_image": 0,
+      "infotexts": [
+        "raw ground meat, bloody, plate\nSteps: 38, Sampler: DPM++ 2M, Schedule type: Karras, CFG scale: 11.0, Seed: 3431567733, Face restoration: CodeFormer, Size: 800x1024, Model hash: 67ab2fd8ec, Model: ponyDiffusionV6XL_v6StartWithThisOne, Version: v1.10.1"
+      ],
+      "styles": [],
+      "job_timestamp": "20250831000718",
+      "clip_skip": 1,
+      "is_using_inpainting_conditioning": false,
+      "version": "v1.10.1"
+    }
+  }
+}

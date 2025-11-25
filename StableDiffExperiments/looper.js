@@ -31,7 +31,8 @@ async function runLoop() {
          'local-stablediff.js',
          '--prompt', `"${argv.prompt}"`,
          '--output', argv.output,
-         '--steps', '20',
+         '--steps', '40',
+         '--sampler_name', "Euler a",
          '--seed', '-1' // seed.toString()
       ];
       console.log(`Running: node ${args.join(' ')}`);
