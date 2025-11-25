@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Log sistema</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="bg-light">
+    <div class="container py-4">
+      <h1 class="mb-4">Log sistema</h1>
+
+      <div id="app">
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Filtri</h5>
+            <div class="row g-3 align-items-end">
+              <div class="col-md-3">
+                <label class="form-label">Tipo evento</label>
+                <select v-model="typeFilter" class="form-select">
+                  <option value="all">Tutti</option>
+                  <option
+                    v-for="t in knownTypes"
+                    :key="t"
+                    :value="t"
+                  >
+                    {{ t }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Nome giocatore</label>
+                <input
+                  type="text"
+                  v-model.trim="playerNameFilter"
+                  class="form-control"
+                  placeholder="Filtra per playerName..."
+                />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Ordine</label>
+                <select v-model="sortDir" class="form-select">
+                  <option value="desc">Più recenti prima</option>
+                  <option value="asc">Più vecchi prima</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Limite</label>
+                <input
+                  type="number"
+                  v-model.number="limit"
+                  min="1"
+                  max="1000"
+                  class="form-control"
+                />
+              </div>
+              <div class="col-md-2 d-grid">
+                <button @click="fetchLogs" class="btn btn-primary">
+                  Applica filtri
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title mb-3">Eventi ({{ logs.length }})</h5>
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Tipo</th>
+                    <th>Direzione</th>
+                    <th>Ruolo</th>
+                    <th>Player</th>
+                    <th>Connessione</th>
+                    <th>Payload</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="log in logs" :key="log._id">
+                    <td>{{ formatDate(log.timestamp) }}</td>
+                    <td><span class="badge bg-secondary">{{ log.type }}</span></td>
+                    <td>{{ log.direction }}</td>
+                    <td>{{ log.role || '-' }}</td>
+                    <td>{{ log.playerName || '-' }}</td>
+                    <td>{{ log.connectionId || '-' }}</td>
+                    <td>
+                      <pre class="small mb-0">{{ prettyPayload(log.payload) }}</pre>
+                    </td>
+                  </tr>
+                  <tr v-if="logs.length === 0">
+                    <td colspan="7" class="text-center text-muted">
+                      Nessun evento trovato con i filtri correnti.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <a href="/admin" class="btn btn-link mt-3">Torna all'admin</a>
+      </div>
+    </div>
+
+    <!-- Vue (consentito solo qui per il sistema di filtro/sorting log) -->
+    <script src="https://unpkg.com/vue@3.5.12/dist/vue.global.prod.js"></script>
+    <script src="/js/log.js"></script>
+  </body>
+</html>
+

@@ -1,0 +1,24 @@
+{
+   "name": "daikina",
+   "version": "0.2.1",
+   "description": "Daikonz + NINA experimental prompt battle software",
+   "main": "test.js",
+   "devDependencies": {},
+   "scripts": {
+      "test": "npm run test"
+   },
+   "repository": {
+      "type": "git",
+      "url": "git+https://github.com/vecna/daikina.git"
+   },
+   "author": "",
+   "license": "AGPL-3.0-or-later",
+   "bugs": {
+      "url": "https://github.com/vecna/daikina/issues"
+   },
+   "homepage": "https://github.com/vecna/daikina#readme",
+   "dependencies": {
+      "dotenv": "^17.2.1",
+      "yargs": "^18.0.0"
+   }
+}

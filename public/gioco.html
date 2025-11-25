@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gioco - Giocatore</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="bg-light">
+    <div class="container py-4">
+      <h1 class="mb-4">Gioco</h1>
+
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Nome giocatore</h5>
+          <div class="input-group">
+            <input
+              type="text"
+              id="playerNameInput"
+              class="form-control"
+              placeholder="Inserisci il tuo nome..."
+            />
+            <button id="saveNameBtn" class="btn btn-outline-primary">
+              Salva nome
+            </button>
+          </div>
+          <p class="mt-2 mb-0 small text-muted">
+            Il punteggio è associato al nome: se lo cambi, avrai un punteggio
+            distinto.
+          </p>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Round corrente</h5>
+          <p class="mb-1">
+            Round: <strong id="roundNumber">-</strong>
+          </p>
+          <p class="mb-1">
+            Countdown: <strong id="roundCountdown">--</strong> s
+          </p>
+          <p class="mt-3 mb-0" id="adminTextDisplay">
+            In attesa che l'admin avvii un round...
+          </p>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">La tua risposta</h5>
+          <textarea
+            id="answerInput"
+            class="form-control mb-3"
+            rows="4"
+            placeholder="Scrivi qui la tua risposta..."
+          ></textarea>
+          <button id="sendAnswerBtn" class="btn btn-primary">
+            Invia risposta
+          </button>
+          <p class="mt-3 mb-0" id="statusMessage"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Il tuo punteggio</h5>
+          <p class="mb-0">
+            <strong id="playerScore">0</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/gioco.js"></script>
+  </body>
+</html>
+
