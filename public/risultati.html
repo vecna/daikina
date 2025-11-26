@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Risultati round</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="bg-light">
+    <div class="container py-4">
+      <h1 class="mb-4">Storico round</h1>
+
+      <!-- Filtro semplice: numero massimo di round da caricare -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Filtri</h5>
+          <div class="row g-3 align-items-end">
+            <div class="col-sm-3">
+              <label for="limitInput" class="form-label">Numero round da mostrare</label>
+              <input
+                type="number"
+                id="limitInput"
+                class="form-control"
+                min="1"
+                max="200"
+                value="20"
+              />
+            </div>
+            <div class="col-sm-3">
+              <label for="playerFilterInput" class="form-label">Filtra per giocatore</label>
+              <input
+                type="text"
+                id="playerFilterInput"
+                class="form-control"
+                placeholder="Nome giocatore (contiene)..."
+              />
+            </div>
+            <div class="col-sm-3">
+              <label for="winnerOnlyCheckbox" class="form-label">Solo round con vincitori</label>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="winnerOnlyCheckbox"
+                />
+                <label class="form-check-label" for="winnerOnlyCheckbox">
+                  Mostra solo round che hanno almeno un vincitore
+                </label>
+              </div>
+            </div>
+            <div class="col-sm-3 d-grid">
+              <button id="applyFiltersBtn" class="btn btn-primary">
+                Applica filtri
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista round -->
+      <div id="roundsContainer" class="accordion mb-4"></div>
+
+      <a href="/supervisore.html" class="btn btn-link">Torna al pannello supervisore</a>
+      <a href="/log" class="btn btn-link">Apri log eventi</a>
+    </div>
+
+    <script src="/js/risultati.js"></script>
+  </body>
+</html>
+

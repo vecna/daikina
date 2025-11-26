@@ -20,7 +20,8 @@ const RoundSchema = new mongoose.Schema(
     startTime: Date,
     durationMs: Number,
     toleranceMs: Number,
-    answers: [AnswerSchema]
+    answers: [AnswerSchema],
+    winnerNames: [String]
   },
   { timestamps: true }
 );
