@@ -10,6 +10,7 @@
   const sendAnswerBtn = document.getElementById('sendAnswerBtn');
   const statusMessageEl = document.getElementById('statusMessage');
   const playerScoreEl = document.getElementById('playerScore');
+  const roundGalleryEl = document.getElementById('roundGallery');
 
   let ws;
   let playerId = null;
@@ -20,6 +21,10 @@
   let countdownInterval = null;
   let autoSendTimeout = null;
   let hasSubmitted = false;
+
+  // Risposte del round corrente (per mostrare galleria)
+  // key: playerId, value: { playerId, playerName, text, submittedAt, submittedByTimeout, late, imagePath, imageStatus }
+  const roundAnswers = new Map();
 
   function connectWS() {
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -41,6 +46,12 @@
           break;
         case 'round_start':
           handleRoundStart(msg);
+          break;
+        case 'round_answer':
+          handleRoundAnswer(msg);
+          break;
+        case 'answer_image_ready':
+          handleAnswerImageReady(msg);
           break;
         case 'answer_accepted':
           handleAnswerAccepted(msg);
@@ -111,8 +122,70 @@
     sendAnswerBtn.disabled = false;
     answerInput.focus();
 
+    // Reset galleria
+    roundAnswers.clear();
+    renderGallery();
+
     startCountdown();
     scheduleAutoSend();
+  }
+
+  function handleRoundAnswer(msg) {
+    // Ignoriamo risposte di altri round (edge case)
+    if (msg.roundId && currentRoundId && msg.roundId !== currentRoundId) {
+      return;
+    }
+
+    const answerPlayerId = msg.playerId;
+    const answerPlayerName = msg.playerName || 'Senza nome';
+
+    const submittedAt = msg.submittedAt
+      ? new Date(msg.submittedAt)
+      : null;
+
+    const entry = {
+      playerId: answerPlayerId,
+      playerName: answerPlayerName,
+      text: msg.text || '',
+      submittedAt,
+      submittedByTimeout: !!msg.submittedByTimeout,
+      late: !!msg.late,
+      imagePath: msg.imagePath || null,
+      imageStatus: msg.imageStatus || 'pending'
+    };
+
+    roundAnswers.set(answerPlayerId, entry);
+    renderGallery();
+  }
+
+  function handleAnswerImageReady(msg) {
+    if (msg.roundId && currentRoundId && msg.roundId !== currentRoundId) {
+      return;
+    }
+
+    const answerPlayerId = msg.playerId;
+    const answerPlayerName = msg.playerName || 'Senza nome';
+
+    let entry = roundAnswers.get(answerPlayerId);
+    if (!entry) {
+      entry = {
+        playerId: answerPlayerId,
+        playerName: answerPlayerName,
+        text: '',
+        submittedAt: null,
+        submittedByTimeout: false,
+        late: false,
+        imagePath: null,
+        imageStatus: 'pending'
+      };
+      roundAnswers.set(answerPlayerId, entry);
+    }
+
+    entry.playerName = answerPlayerName;
+    entry.imagePath = msg.imagePath || null;
+    entry.imageStatus = msg.imagePath ? 'ok' : 'error';
+
+    renderGallery();
   }
 
   function startCountdown() {
@@ -171,7 +244,6 @@
   }
 
   function handleAnswerAccepted(msg) {
-    // potremmo fare qualcosa di extra, ma intanto confermiamo
     console.log('Risposta accettata:', msg);
   }
 
@@ -199,6 +271,91 @@
     }
   }
 
+  function renderGallery() {
+    if (!roundGalleryEl) return;
+    roundGalleryEl.innerHTML = '';
+
+    if (roundAnswers.size === 0) {
+      roundGalleryEl.innerHTML =
+        '<p class="text-muted mb-0">Nessuna risposta ricevuta ancora.</p>';
+      return;
+    }
+
+    const arr = Array.from(roundAnswers.values()).sort((a, b) =>
+      (a.playerName || '').localeCompare(b.playerName || '')
+    );
+
+    arr.forEach((ans) => {
+      const col = document.createElement('div');
+      col.className = 'col-md-6 col-xl-4';
+
+      const isMe = ans.playerId === playerId;
+
+      let badges = '';
+      if (isMe) {
+        badges += '<span class="badge bg-primary me-1">Tu</span>';
+      }
+      if (ans.submittedByTimeout) {
+        badges +=
+          '<span class="badge bg-warning text-dark me-1">Auto (timeout)</span>';
+      }
+      if (ans.late) {
+        badges +=
+          '<span class="badge bg-danger me-1">Oltre i 30s (entro tolleranza)</span>';
+      }
+      if (ans.imageStatus === 'pending') {
+        badges +=
+          '<span class="badge bg-info text-dark me-1">Immagine in generazione...</span>';
+      } else if (ans.imageStatus === 'error') {
+        badges +=
+          '<span class="badge bg-dark me-1">Errore generazione immagine</span>';
+      }
+
+      let submittedLine = '';
+      if (ans.submittedAt) {
+        submittedLine =
+          'Inviata alle ' + ans.submittedAt.toLocaleTimeString();
+      }
+
+      let imageBlock = '';
+      if (ans.imagePath && ans.imageStatus === 'ok') {
+        imageBlock = `
+          <div class="mt-2">
+            <img
+              src="${escapeHtml(ans.imagePath)}"
+              alt="Immagine generata"
+              class="img-fluid rounded border"
+            />
+          </div>
+        `;
+      }
+
+      col.innerHTML = `
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <h6 class="card-subtitle mb-0">
+                ${escapeHtml(ans.playerName || 'Senza nome')}
+              </h6>
+              <span>${badges}</span>
+            </div>
+            <div class="small text-muted mb-2">
+              ${submittedLine}
+            </div>
+            <div class="flex-grow-1">
+              <p class="mb-2" style="white-space: pre-wrap;">
+                ${escapeHtml(ans.text || '')}
+              </p>
+              ${imageBlock}
+            </div>
+          </div>
+        </div>
+      `;
+
+      roundGalleryEl.appendChild(col);
+    });
+  }
+
   function onSaveNameClick() {
     const newName = playerNameInput.value.trim();
     if (!newName || !ws || ws.readyState !== WebSocket.OPEN) return;
@@ -215,11 +372,18 @@
     sendAnswer(false);
   }
 
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
   // Event listeners
   saveNameBtn.addEventListener('click', onSaveNameClick);
   sendAnswerBtn.addEventListener('click', onSendAnswerClick);
 
-  // Enter sulla textarea -> invio (opzionale)
+  // Enter sulla textarea -> invio (se vuoi, lo manteniamo)
   answerInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || e.shiftKey)) return;
     if (e.key === 'Enter') {
@@ -236,4 +400,3 @@
     playerNameInput.value = storedName;
   }
 })();
-

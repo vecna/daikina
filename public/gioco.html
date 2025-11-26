@@ -58,12 +58,24 @@
             id="answerInput"
             class="form-control mb-3"
             rows="4"
-            placeholder="Scrivi qui la tua risposta..."
+            placeholder="Scrivi qui la tua risposta (prompt per l'immagine)..."
           ></textarea>
           <button id="sendAnswerBtn" class="btn btn-primary">
             Invia risposta
           </button>
           <p class="mt-3 mb-0" id="statusMessage"></p>
+        </div>
+      </div>
+
+      <!-- Nuova card: galleria del round -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Risultati del round</h5>
+          <p class="small text-muted">
+            Qui compariranno i prompt e le immagini dei giocatori del round
+            corrente, man mano che vengono generati.
+          </p>
+          <div id="roundGallery" class="row g-3"></div>
         </div>
       </div>
 
@@ -80,4 +92,3 @@
     <script src="/js/gioco.js"></script>
   </body>
 </html>
-

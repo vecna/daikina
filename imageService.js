@@ -117,7 +117,7 @@ function createImageService({ state, Round, utils }) {
           }
         });
 
-        // 5. Notifico admin e player via WS
+        // 5. Notifico admin E TUTTI I PLAYER via WS
         const msgOut = {
           type: 'answer_image_ready',
           roundId: String(roundId),
@@ -127,10 +127,10 @@ function createImageService({ state, Round, utils }) {
           imagePath: publicPath
         };
 
-        // Tutti gli admin
-        broadcast((c) => c.role === 'admin', msgOut);
-        // Il giocatore specifico
-        broadcast((c) => c.id === playerId, msgOut);
+        broadcast(
+          (c) => c.role === 'admin' || c.role === 'player',
+          msgOut
+        );
       } catch (err) {
         debugImage('Errore generazione immagine:', err);
 
@@ -170,7 +170,6 @@ function createImageService({ state, Round, utils }) {
         });
       }
     })().catch((err) => {
-      // catch di fallback per errori nella IIFE
       debugImage('Errore non gestito nel worker di imageService:', err);
     });
   }

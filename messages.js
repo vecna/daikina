@@ -95,7 +95,7 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
     }
   }
 
-  // --- Nuovo: registrazione admin ---
+  // --- Admin ---
 
   function handleAdminRegister(ws, client, msg) {
     client.role = 'admin';
@@ -105,7 +105,54 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
     broadcastPlayerListToAdmins();
   }
 
-  // --- Handler specifici esistenti ---
+  async function handleAdminRoundStart(ws, client, msg) {
+    client.role = 'admin';
+
+    const text = (msg.text || '').trim();
+    if (!text) return;
+
+    // Se c'è già un round attivo, per semplicità lo chiudiamo "logicamente"
+    state.currentRound = null;
+
+    const now = new Date();
+    const durationMs = 30000; // 30 secondi "ufficiali" per il gioco
+    const toleranceMs = 5000; // 5 secondi di tolleranza per ritardi invio/rete
+
+    const roundDoc = await Round.create({
+      roundNumber: state.roundCounter++,
+      adminText: text,
+      startTime: now,
+      durationMs,
+      toleranceMs,
+      answers: []
+    });
+
+    state.currentRound = {
+      dbId: roundDoc._id,
+      roundNumber: roundDoc.roundNumber,
+      adminText: text,
+      startTime: now,
+      durationMs,
+      toleranceMs
+    };
+
+    debugMessages(`Nuovo round avviato: #${roundDoc.roundNumber}`);
+
+    // broadcast round_start a TUTTI
+    const msgOut = {
+      type: 'round_start',
+      roundId: String(roundDoc._id),
+      roundNumber: roundDoc.roundNumber,
+      text,
+      durationMs,
+      toleranceMs,
+      startTime: now.toISOString()
+    };
+
+    broadcast(null, msgOut);
+  }
+
+  // --- Player ---
 
   function handlePlayerRegister(ws, client, msg) {
     client.role = 'player';
@@ -160,53 +207,6 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
 
     // Aggiorniamo la lista giocatori sugli admin
     broadcastPlayerListToAdmins();
-  }
-
-  async function handleAdminRoundStart(ws, client, msg) {
-    client.role = 'admin';
-
-    const text = (msg.text || '').trim();
-    if (!text) return;
-
-    // Se c'è già un round attivo, per semplicità lo chiudiamo "logicamente"
-    state.currentRound = null;
-
-    const now = new Date();
-    const durationMs = 30000; // 30 secondi "ufficiali" per il gioco
-    const toleranceMs = 5000; // 5 secondi di tolleranza per ritardi invio/rete
-
-    const roundDoc = await Round.create({
-      roundNumber: state.roundCounter++,
-      adminText: text,
-      startTime: now,
-      durationMs,
-      toleranceMs,
-      answers: []
-    });
-
-    state.currentRound = {
-      dbId: roundDoc._id,
-      roundNumber: roundDoc.roundNumber,
-      adminText: text,
-      startTime: now,
-      durationMs,
-      toleranceMs
-    };
-
-    debugMessages(`Nuovo round avviato: #${roundDoc.roundNumber}`);
-
-    // broadcast round_start a TUTTI
-    const msgOut = {
-      type: 'round_start',
-      roundId: String(roundDoc._id),
-      roundNumber: roundDoc.roundNumber,
-      text,
-      durationMs,
-      toleranceMs,
-      startTime: now.toISOString()
-    };
-
-    broadcast(null, msgOut);
   }
 
   async function handlePlayerAnswer(ws, client, msg) {
@@ -301,10 +301,13 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
       imageStatus: 'pending'
     };
 
-    // broadcast solo agli admin (testo & stato pending)
-    broadcast((c) => c.role === 'admin', msgOut);
+    // broadcast ad ADMIN + TUTTI I PLAYER (così i giocatori vedono prompt/risposte del round)
+    broadcast(
+      (c) => c.role === 'admin' || c.role === 'player',
+      msgOut
+    );
 
-    // eco al giocatore
+    // eco al giocatore (per conferma "ok" lato client)
     sendTo(ws, {
       type: 'answer_accepted',
       roundId: String(state.currentRound.dbId),
@@ -331,4 +334,3 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
 module.exports = {
   createMessageHandlers
 };
-
