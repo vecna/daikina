@@ -9,7 +9,12 @@ const AnswerSchema = new mongoose.Schema(
     submittedAt: Date,
     submittedByTimeout: Boolean,
     late: Boolean,
-    // Nuovi campi per gestione immagine
+
+    // Info torneo / modello per questa singola risposta
+    tournamentName: String, // torneo a cui appartiene questo answer
+    modelName: String,      // modello Replicate effettivamente usato
+
+    // Campi immagine
     imagePath: String, // es. "/pictures/<roundId>-<playerId>.png"
     imageStatus: {
       type: String,
@@ -28,8 +33,14 @@ const RoundSchema = new mongoose.Schema(
     startTime: Date,
     durationMs: Number,
     toleranceMs: Number,
+
+    // Info torneo / modello per questo round
+    tournamentName: String, // torneo a cui appartiene il round
+    modelName: String,      // modello "di default" usato quando è partito il round
+
     answers: [AnswerSchema],
-    // (già previsto in una versione precedente)
+
+    // vincitori (per nome) – può contenere uno o più playerName
     winnerNames: [String]
   },
   { timestamps: true }

@@ -1,0 +1,64 @@
+You are helping me maintain a JSON catalog of Replicate text-to-image models.
+
+Task:
+Rebuild from scratch an updated JSON array of models with the schema:
+
+[
+  {
+    "model": "producer/model-name",
+    "updated": "YYYY-MM-DD",
+    "cost": 0.04,
+    "imagesPerDollar": 25.0,
+    "page": "https://replicate.com/producer/model-name",
+    "description": "Short description from the model page"
+  },
+  ...
+]
+
+Data source:
+- Browse to this collection page and follow all relevant links:
+  https://replicate.com/collections/text-to-image
+
+Inclusion rules (IMPORTANT):
+1. Only include models that are **official** on Replicate (i.e. have the “Official” badge or are clearly the primary, publisher-backed listing from Google, Black Forest Labs, Ideogram, Recraft, etc.).
+2. Only include models that are **warm** (show up as warm/low-latency deployments on Replicate, not cold/archived).
+3. Only include models that are **meant to produce pictures from a text prompt**:
+   - Text → image or text+image → image.
+   - Exclude: video models, pure image editors that don’t accept a text prompt, LLMs, trainers, utilities, etc.
+
+Fields (how to fill them):
+
+- `"model"`:  
+  Use the exact `owner/model` identifier as used in the Replicate API, e.g. `"google/imagen-4-ultra"`.
+
+- `"page"`:  
+  The canonical Replicate page for that model, e.g. `"https://replicate.com/google/imagen-4-ultra"`.
+
+- `"description"`:  
+  Take a short description from the model’s page (the main tagline or summary).  
+  Paraphrase if necessary, but keep it concise (1–2 sentences max).
+
+- `"updated"`:  
+  Use the **last update date** for the model as shown on the Replicate model page (e.g. the “Updated” field, changelog, or similar).  
+  Format it as `"YYYY-MM-DD"`.  
+  If you only find a month/year, infer a reasonable day (e.g. the 1st) and state it consistently.
+
+- `"cost"` (float):  
+  I want the cost **per generated image in USD**, as a float.  
+  - Prefer the price explicitly given on the Replicate model page or pricing section (e.g. “$0.04 / image”).
+  - If pricing is given in another unit (e.g. per 1,000 images, per 1M tokens, etc.), convert it to a **per-image** cost.
+  - Use a reasonable estimate to 4 decimal places if needed, e.g. `0.0400`.
+
+- `"imagesPerDollar"` (float):  
+  Compute how many images can be generated for $1 using:
+  `imagesPerDollar = 1.0 / cost`
+  Round to 4 decimal places. Example: if cost is `0.04`, then `imagesPerDollar` is `25.0000`.
+
+Output format:
+- Return **only** a JSON array (no comments, no explanations, no markdown), exactly following the schema.
+- Ensure:
+  - `cost` is a number, not a string.
+  - `imagesPerDollar` is a number, not a string.
+  - All dates are ISO strings (`"YYYY-MM-DD"`).
+  - Every object has all six fields: `model`, `updated`, `cost`, `imagesPerDollar`, `page`, `description`.
+
