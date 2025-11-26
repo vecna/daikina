@@ -1,74 +1,187 @@
 <!DOCTYPE html>
 <html lang="it">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Admin - Gioco di testo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Bootstrap CSS (per layout) -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="/css/style.css" />
-  </head>
-  <body class="bg-light">
-    <div class="container py-4">
-      <h1 class="mb-4">Pannello Admin</h1>
 
-      <div class="card mb-4">
-        <div class="card-body">
-          <h5 class="card-title">Nuovo round</h5>
-          <div class="mb-3">
-            <label for="adminText" class="form-label">Testo per i giocatori</label>
-            <textarea
-              id="adminText"
-              class="form-control"
-              rows="3"
-              placeholder="Scrivi il testo per il round..."
-            ></textarea>
-          </div>
-          <button id="startRoundBtn" class="btn btn-primary">
-            Avvia round
-          </button>
-          <div class="mt-3">
-            <span class="me-3">
-              Round corrente:
-              <strong id="currentRoundNumber">-</strong>
-            </span>
-            <span>
-              Countdown:
-              <strong id="roundCountdown">--</strong> s
-            </span>
-          </div>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin - Tornei & Modello</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    .clickable-row {
+      cursor: pointer;
+    }
+
+    .clickable-row.active {
+      background-color: #e7f1ff;
+    }
+
+    .small-badge {
+      font-size: 0.75rem;
+    }
+
+    .table-sm td,
+    .table-sm th {
+      padding: 0.35rem 0.5rem;
+    }
+  </style>
+</head>
+
+<body class="bg-light">
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h3 mb-1">Pannello Admin</h1>
+        <p class="text-muted mb-0">
+          Gestisci <strong>tornei</strong> e <strong>modello Replicate</strong>
+          per il gioco.
+        </p>
       </div>
-
-      <div class="row">
-        <!-- Risposte -->
-        <div class="col-lg-8 mb-4">
-          <div class="card h-100">
-            <div class="card-body">
-              <h5 class="card-title">Risposte round corrente</h5>
-              <div id="answersContainer" class="row g-3"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Punteggi -->
-        <div class="col-lg-4 mb-4">
-          <div class="card h-100">
-            <div class="card-body">
-              <h5 class="card-title mb-3">Punteggi</h5>
-              <ul id="scoreList" class="list-group list-group-flush"></ul>
-            </div>
-          </div>
-        </div>
+      <div class="text-end">
+        <div class="small text-muted">Torneo corrente:</div>
+        <div id="currentTournamentLabel" class="fw-bold">-</div>
+        <div class="small text-muted mt-1">Modello corrente:</div>
+        <div id="currentModelLabel" class="fw-bold">-</div>
       </div>
-
-      <a href="/log.html" class="btn btn-outline-secondary">Vai ai log</a>
     </div>
 
-    <script src="/js/admin.js"></script>
-  </body>
-</html>
+    <div id="adminAlertContainer"></div>
 
+    <div class="row g-4">
+      <!-- Colonna tornei -->
+      <div class="col-12 col-lg-4">
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Tornei</h5>
+            <p class="small text-muted">
+              Crea un nuovo torneo, selezionane uno esistente, oppure chiudilo
+              per non permettere nuovi round.
+            </p>
+
+            <div class="mb-3">
+              <label for="newTournamentName" class="form-label mb-1">
+                Nuovo torneo
+              </label>
+              <div class="input-group">
+                <input type="text" id="newTournamentName" class="form-control" placeholder="Nome torneo..." />
+                <button id="createTournamentBtn" class="btn btn-primary" type="button">
+                  Crea &amp; seleziona
+                </button>
+              </div>
+              <div class="form-text">
+                Il nome deve essere univoco, es. "Battle Sabato 18:00".
+              </div>
+            </div>
+
+            <hr />
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0">Tornei esistenti</h6>
+              <button id="refreshTournamentsBtn" type="button" class="btn btn-sm btn-outline-secondary">
+                Aggiorna
+              </button>
+            </div>
+
+            <div class="table-responsive" style="max-height: 320px;">
+              <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Nome</th>
+                    <th>Stato</th>
+                    <th>Creato il</th>
+                  </tr>
+                </thead>
+                <tbody id="tournamentsTableBody">
+                  <tr>
+                    <td colspan="3" class="text-muted small">
+                      Nessun torneo caricato.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-3 d-flex justify-content-between align-items-center">
+              <div>
+                <span class="small text-muted">Torneo selezionato:</span>
+                <span id="selectedTournamentLabel" class="fw-semibold">-</span>
+              </div>
+              <button id="closeTournamentBtn" class="btn btn-sm btn-outline-danger" type="button">
+                Chiudi torneo
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonna modelli -->
+      <div class="col-12 col-lg-8">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <h5 class="card-title mb-0">Modelli Replicate</h5>
+                <p class="small text-muted mb-0">
+                  Clicca un modello per impostarlo come <strong>corrente</strong>.
+                  Il cambio avrà effetto sulle prossime immagini generate.
+                </p>
+              </div>
+              <div class="text-end">
+                <div class="small text-muted mb-1">Ordinamento:</div>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" class="btn btn-outline-secondary" data-sort="imagesPerDollar">
+                    Immagini/$
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" data-sort="cost">
+                    Costo
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" data-sort="updated">
+                    Aggiornato
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-responsive" style="max-height: 480px;">
+              <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Modello</th>
+                    <th class="text-end">Immagini/$</th>
+                    <th class="text-end">Costo ($)</th>
+                    <th>Aggiornato</th>
+                    <th>Descrizione</th>
+                    <th>Pagina</th>
+                  </tr>
+                </thead>
+                <tbody id="modelsTableBody">
+                  <tr>
+                    <td colspan="6" class="text-muted small">
+                      Caricamento modelli...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-3 small text-muted">
+              Suggerimento: ordina per <strong>Immagini/$</strong> per massimizzare
+              quante immagini puoi generare con lo stesso budget, oppure per
+              <strong>Aggiornato</strong> per vedere prima i modelli più recenti.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script id="model-config"
+    type="application/json"
+    src="/json/ReplicateModelsList.json"></script>
+  <script src="/js/admin.js"></script>
+
+</body>
+
+</html>

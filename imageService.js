@@ -1,6 +1,4 @@
 // imageService.js
-// Gestisce la generazione asincrona di immagini via Replicate e l'aggiornamento del DB.
-
 const path = require('path');
 const fs = require('fs');
 const { writeFile } = require('fs/promises');
@@ -17,14 +15,10 @@ const Replicate = require('replicate');
 function createImageService({ state, Round, utils }) {
   const { broadcast, logEvent } = utils;
 
-  // Cartella dove salviamo le immagini statiche
   const picturesDir = path.join(__dirname, 'public', 'pictures');
   fs.mkdirSync(picturesDir, { recursive: true });
 
-  // Inizializza client Replicate solo se c'è la chiave
   const replicateToken = process.env.REPLICATE_API_TOKEN;
-  const replicateModel =
-    process.env.REPLICATE_MODEL || 'black-forest-labs/flux-schnell';
 
   let replicate = null;
 
@@ -32,7 +26,7 @@ function createImageService({ state, Round, utils }) {
     replicate = new Replicate({
       auth: replicateToken
     });
-    debugImage('Replicate client inizializzato, model=%s', replicateModel);
+    debugImage('Replicate client inizializzato');
   } else {
     debugImage(
       'ATTENZIONE: REPLICATE_API_TOKEN non impostato. Generazione immagini DISABILITATA.'
@@ -40,8 +34,8 @@ function createImageService({ state, Round, utils }) {
   }
 
   /**
-   * Avvia in background la generazione immagine per una risposta.
-   * Non blocca il flusso di gioco (fire-and-forget).
+   * Avvia in background la generazione immagine.
+   * Usa il modello globale corrente (state.currentModelName).
    */
   function queueImageGeneration({ roundId, roundNumber, playerId, playerName, prompt }) {
     if (!replicate) {
@@ -49,22 +43,25 @@ function createImageService({ state, Round, utils }) {
       return;
     }
 
-    // Piccolo worker asincrono
     (async () => {
       const startedAt = new Date();
+
+      const modelToUse =
+        state.currentModelName ||
+        process.env.REPLICATE_MODEL ||
+        'black-forest-labs/flux-1.1-pro';
+
       debugImage(
-        'Avvio generazione immagine: round=%s, player=%s (%s)',
+        'Avvio generazione immagine: model=%s, round=%s, player=%s (%s)',
+        modelToUse,
         roundId,
         playerId,
         playerName
       );
 
       try {
-        // 1. Chiamata al modello su Replicate
-        const result = await replicate.run(replicateModel, {
-          input: {
-            prompt
-          }
+        const result = await replicate.run(modelToUse, {
+          input: { prompt }
         });
 
         if (!Array.isArray(result) || result.length === 0) {
@@ -83,7 +80,6 @@ function createImageService({ state, Round, utils }) {
         await writeFile(filePath, imageContent);
         debugImage('Immagine salvata: %s', filePath);
 
-        // 3. Aggiorno il documento Round: risposta di questo player
         await Round.updateOne(
           {
             _id: roundId,
@@ -94,12 +90,12 @@ function createImageService({ state, Round, utils }) {
             $set: {
               'answers.$.imagePath': publicPath,
               'answers.$.imageStatus': 'ok',
-              'answers.$.imageError': null
+              'answers.$.imageError': null,
+              'answers.$.modelName': modelToUse
             }
           }
         );
 
-        // 4. Loggo l'evento
         await logEvent({
           type: 'image_generated',
           direction: 'server->client',
@@ -112,21 +108,23 @@ function createImageService({ state, Round, utils }) {
             playerId,
             playerName,
             imagePath: publicPath,
+            modelName: modelToUse,
             startedAt,
             finishedAt: new Date()
           }
         });
 
-        // 5. Notifico admin E TUTTI I PLAYER via WS
         const msgOut = {
           type: 'answer_image_ready',
           roundId: String(roundId),
           roundNumber,
           playerId,
           playerName,
-          imagePath: publicPath
+          imagePath: publicPath,
+          modelName: modelToUse
         };
 
+        // Admin + tutti i player vedono che l'immagine è pronta
         broadcast(
           (c) => c.role === 'admin' || c.role === 'player',
           msgOut
@@ -134,7 +132,6 @@ function createImageService({ state, Round, utils }) {
       } catch (err) {
         debugImage('Errore generazione immagine:', err);
 
-        // Aggiorno lo stato della risposta come errore
         try {
           await Round.updateOne(
             {
@@ -153,7 +150,6 @@ function createImageService({ state, Round, utils }) {
           debugImage('Errore aggiornamento stato immagine nel DB:', dbErr);
         }
 
-        // Log dell'errore
         await logEvent({
           type: 'image_generation_error',
           direction: 'server->client',
@@ -182,4 +178,3 @@ function createImageService({ state, Round, utils }) {
 module.exports = {
   createImageService
 };
-

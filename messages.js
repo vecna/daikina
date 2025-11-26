@@ -6,10 +6,11 @@ const debugMessages = require('debug')('server:messages');
  * @param {Object} deps
  * @param {Object} deps.state
  * @param {Object} deps.Round
+ * @param {Object} deps.Tournament
  * @param {Object} deps.utils
  * @param {Object} deps.imageService
  */
-function createMessageHandlers({ state, Round, utils, imageService }) {
+function createMessageHandlers({ state, Round, Tournament, utils, imageService }) {
   const { logEvent, sendTo, broadcast, broadcastPlayerListToAdmins } = utils;
   const { queueImageGeneration } = imageService;
 
@@ -30,7 +31,6 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
       return;
     }
 
-    // Log di base dell'evento in ingresso
     await logEvent({
       type: msg.type || 'unknown',
       direction: 'client->server',
@@ -77,7 +77,6 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
 
     debugMessages(`Connessione chiusa: ${client.id}`);
 
-    // Loggiamo la chiusura (fire & forget)
     logEvent({
       type: 'connection_close',
       direction: 'client->server',
@@ -90,7 +89,6 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
     state.clients.delete(ws);
 
     if (client.role === 'player') {
-      // Aggiornamento lista giocatori per tutti gli admin
       broadcastPlayerListToAdmins();
     }
   }
@@ -101,7 +99,6 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
     client.role = 'admin';
     debugMessages(`Admin registrato: ${client.id}`);
 
-    // Inviamo la lista giocatori a TUTTI gli admin (incluso questo)
     broadcastPlayerListToAdmins();
   }
 
@@ -111,12 +108,28 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
     const text = (msg.text || '').trim();
     if (!text) return;
 
-    // Se c'è già un round attivo, per semplicità lo chiudiamo "logicamente"
+    const tournamentName =
+      state.currentTournamentName || 'Default Tournament';
+    const tournamentId = state.currentTournamentId || null;
+
+    // Se il torneo è chiuso o non esiste, rifiutiamo
+    if (tournamentId) {
+      const t = await Tournament.findById(tournamentId).lean();
+      if (!t || t.isClosed) {
+        sendTo(ws, {
+          type: 'round_start_rejected',
+          reason: 'tournament_closed_or_missing',
+          tournamentName
+        });
+        return;
+      }
+    }
+
     state.currentRound = null;
 
     const now = new Date();
-    const durationMs = 30000; // 30 secondi "ufficiali" per il gioco
-    const toleranceMs = 5000; // 5 secondi di tolleranza per ritardi invio/rete
+    const durationMs = 30000;
+    const toleranceMs = 5000;
 
     const roundDoc = await Round.create({
       roundNumber: state.roundCounter++,
@@ -124,6 +137,9 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
       startTime: now,
       durationMs,
       toleranceMs,
+      tournament: tournamentId,
+      tournamentName,
+      modelName: state.currentModelName || null,
       answers: []
     });
 
@@ -133,12 +149,16 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
       adminText: text,
       startTime: now,
       durationMs,
-      toleranceMs
+      toleranceMs,
+      tournament: tournamentId,
+      tournamentName,
+      modelName: state.currentModelName || null
     };
 
-    debugMessages(`Nuovo round avviato: #${roundDoc.roundNumber}`);
+    debugMessages(
+      `Nuovo round avviato: #${roundDoc.roundNumber} (tournament=${tournamentName})`
+    );
 
-    // broadcast round_start a TUTTI
     const msgOut = {
       type: 'round_start',
       roundId: String(roundDoc._id),
@@ -146,7 +166,9 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
       text,
       durationMs,
       toleranceMs,
-      startTime: now.toISOString()
+      startTime: now.toISOString(),
+      tournamentName,
+      modelName: state.currentModelName || null
     };
 
     broadcast(null, msgOut);
@@ -173,7 +195,6 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
 
     debugMessages(`Registrato nuovo player: ${client.id} (${client.playerName})`);
 
-    // Aggiorniamo la lista giocatori sugli admin
     broadcastPlayerListToAdmins();
   }
 
@@ -205,13 +226,11 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
       }
     );
 
-    // Aggiorniamo la lista giocatori sugli admin
     broadcastPlayerListToAdmins();
   }
 
   async function handlePlayerAnswer(ws, client, msg) {
     if (!state.currentRound) {
-      // round non attivo
       sendTo(ws, { type: 'answer_rejected', reason: 'no_active_round' });
       return;
     }
@@ -225,7 +244,6 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
     const diffMs = now - state.currentRound.startTime;
     const { durationMs, toleranceMs } = state.currentRound;
 
-    // Controllo finestra di accettazione (30s + 5s di tolleranza)
     if (diffMs > durationMs + toleranceMs) {
       await logEvent({
         type: 'player_answer_too_late',
@@ -249,16 +267,14 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
     const playerId = client.id;
     const text = (msg.text || '').trim();
     const submittedByTimeout = !!msg.sentByTimeout;
-    const late = diffMs > durationMs; // dentro la tolleranza ma oltre i 30s ufficiali
+    const late = diffMs > durationMs;
 
-    // Verifichiamo che non esista già una risposta per questo playerName nel round
     const existing = await Round.findOne({
       _id: state.currentRound.dbId,
       'answers.playerName': playerName
     }).lean();
 
     if (existing) {
-      // già risposto, ignoriamo (ma logghiamo)
       await logEvent({
         type: 'player_answer_duplicate',
         direction: 'client->server',
@@ -270,7 +286,6 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
       return;
     }
 
-    // Nuova answer, con stato immagine "pending"
     const answer = {
       playerName,
       playerId,
@@ -278,9 +293,12 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
       submittedAt: now,
       submittedByTimeout,
       late,
+      tournament: state.currentRound.tournament || null,
+      tournamentName: state.currentRound.tournamentName || null,
       imagePath: null,
       imageStatus: 'pending',
-      imageError: null
+      imageError: null,
+      modelName: null
     };
 
     await Round.updateOne(
@@ -298,16 +316,16 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
       submittedAt: now.toISOString(),
       submittedByTimeout,
       late,
-      imageStatus: 'pending'
+      imageStatus: 'pending',
+      tournamentName: state.currentRound.tournamentName || null
     };
 
-    // broadcast ad ADMIN + TUTTI I PLAYER (così i giocatori vedono prompt/risposte del round)
+    // Admin + tutti i player vedono il testo della risposta
     broadcast(
       (c) => c.role === 'admin' || c.role === 'player',
       msgOut
     );
 
-    // eco al giocatore (per conferma "ok" lato client)
     sendTo(ws, {
       type: 'answer_accepted',
       roundId: String(state.currentRound.dbId),
@@ -315,7 +333,7 @@ function createMessageHandlers({ state, Round, utils, imageService }) {
       late
     });
 
-    // Avvio asincrono della generazione immagine
+    // Avvio generazione immagine (modello letto da state.currentModelName)
     queueImageGeneration({
       roundId: state.currentRound.dbId,
       roundNumber: state.currentRound.roundNumber,

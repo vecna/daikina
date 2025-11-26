@@ -10,12 +10,18 @@ const AnswerSchema = new mongoose.Schema(
     submittedByTimeout: Boolean,
     late: Boolean,
 
-    // Info torneo / modello per questa singola risposta
-    tournamentName: String, // torneo a cui appartiene questo answer
-    modelName: String,      // modello Replicate effettivamente usato
+    // Riferimento al torneo e nome denormalizzato
+    tournament: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tournament'
+    },
+    tournamentName: String,
+
+    // Modello Replicate effettivamente usato per questa risposta
+    modelName: String,
 
     // Campi immagine
-    imagePath: String, // es. "/pictures/<roundId>-<playerId>.png"
+    imagePath: String,
     imageStatus: {
       type: String,
       enum: ['pending', 'ok', 'error'],
@@ -34,17 +40,23 @@ const RoundSchema = new mongoose.Schema(
     durationMs: Number,
     toleranceMs: Number,
 
-    // Info torneo / modello per questo round
-    tournamentName: String, // torneo a cui appartiene il round
-    modelName: String,      // modello "di default" usato quando è partito il round
+    // Riferimento al torneo e nome denormalizzato
+    tournament: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tournament'
+    },
+    tournamentName: String,
+
+    // Modello “di default” del round (può differire da answer.modelName se
+    // il modello viene cambiato a metà round)
+    modelName: String,
 
     answers: [AnswerSchema],
 
-    // vincitori (per nome) – può contenere uno o più playerName
+    // Vincitori per nome
     winnerNames: [String]
   },
   { timestamps: true }
 );
 
 module.exports = mongoose.model('Round', RoundSchema);
-

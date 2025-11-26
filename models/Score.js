@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 
 const ScoreSchema = new mongoose.Schema(
   {
-    // Torneo a cui appartiene questo punteggio.
-    // Lasciato opzionale per compatibilità con dati esistenti.
+    // Torneo a cui appartiene questo punteggio
     tournamentName: {
       type: String,
       default: null
@@ -29,7 +28,6 @@ const ScoreSchema = new mongoose.Schema(
 );
 
 // Un punteggio per coppia (tournamentName, playerName)
-// tournamentName può essere null per i dati "storici" / pre-tournament
 ScoreSchema.index(
   { tournamentName: 1, playerName: 1 },
   { unique: true }
