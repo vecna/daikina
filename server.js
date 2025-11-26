@@ -19,6 +19,8 @@ const Score = require('./models/Score');
 const { createUtils } = require('./utils');
 const { createMessageHandlers } = require('./messages');
 const { registerApiRoutes } = require('./api');
+const { createImageService } = require('./imageService');
+
 
 // --- Configurazione base Express / HTTP ---
 
@@ -64,6 +66,13 @@ const utils = createUtils({
   EventLog
 });
 
+const imageService = createImageService({
+  state,
+  Round,
+  utils
+});
+
+
 // --- API REST (scores, logs, rounds, root) ---
 
 registerApiRoutes({
@@ -82,7 +91,8 @@ const wss = new WebSocket.Server({ server, path: '/ws' });
 const messageHandlers = createMessageHandlers({
   state,
   Round,
-  utils
+  utils,
+  imageService
 });
 
 wss.on('connection', (ws) => {

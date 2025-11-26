@@ -3,9 +3,15 @@ const debugMessages = require('debug')('server:messages');
 
 /**
  * Crea gli handler per i messaggi WebSocket.
+ * @param {Object} deps
+ * @param {Object} deps.state
+ * @param {Object} deps.Round
+ * @param {Object} deps.utils
+ * @param {Object} deps.imageService
  */
-function createMessageHandlers({ state, Round, utils }) {
+function createMessageHandlers({ state, Round, utils, imageService }) {
   const { logEvent, sendTo, broadcast, broadcastPlayerListToAdmins } = utils;
+  const { queueImageGeneration } = imageService;
 
   async function onMessage(ws, rawData) {
     let msg;
@@ -264,13 +270,17 @@ function createMessageHandlers({ state, Round, utils }) {
       return;
     }
 
+    // Nuova answer, con stato immagine "pending"
     const answer = {
       playerName,
       playerId,
       text,
       submittedAt: now,
       submittedByTimeout,
-      late
+      late,
+      imagePath: null,
+      imageStatus: 'pending',
+      imageError: null
     };
 
     await Round.updateOne(
@@ -287,10 +297,11 @@ function createMessageHandlers({ state, Round, utils }) {
       text,
       submittedAt: now.toISOString(),
       submittedByTimeout,
-      late
+      late,
+      imageStatus: 'pending'
     };
 
-    // broadcast solo agli admin
+    // broadcast solo agli admin (testo & stato pending)
     broadcast((c) => c.role === 'admin', msgOut);
 
     // eco al giocatore
@@ -299,6 +310,15 @@ function createMessageHandlers({ state, Round, utils }) {
       roundId: String(state.currentRound.dbId),
       submittedAt: now.toISOString(),
       late
+    });
+
+    // Avvio asincrono della generazione immagine
+    queueImageGeneration({
+      roundId: state.currentRound.dbId,
+      roundNumber: state.currentRound.roundNumber,
+      playerId,
+      playerName,
+      prompt: text
     });
   }
 

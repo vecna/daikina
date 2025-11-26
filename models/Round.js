@@ -8,7 +8,15 @@ const AnswerSchema = new mongoose.Schema(
     text: String,
     submittedAt: Date,
     submittedByTimeout: Boolean,
-    late: Boolean
+    late: Boolean,
+    // Nuovi campi per gestione immagine
+    imagePath: String, // es. "/pictures/<roundId>-<playerId>.png"
+    imageStatus: {
+      type: String,
+      enum: ['pending', 'ok', 'error'],
+      default: 'pending'
+    },
+    imageError: String
   },
   { _id: false }
 );
@@ -21,6 +29,7 @@ const RoundSchema = new mongoose.Schema(
     durationMs: Number,
     toleranceMs: Number,
     answers: [AnswerSchema],
+    // (già previsto in una versione precedente)
     winnerNames: [String]
   },
   { timestamps: true }

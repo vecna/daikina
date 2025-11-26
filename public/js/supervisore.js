@@ -73,6 +73,9 @@
         case 'player_renamed_broadcast':
           handlePlayerRenamed(msg);
           break;
+        case 'answer_image_ready':
+          handleAnswerImageReady(msg);
+          break;
         default:
           // Altri tipi di messaggio possono essere ignorati o loggati
           break;
@@ -140,7 +143,9 @@
       submittedAt,
       submittedByTimeout: !!msg.submittedByTimeout,
       late: !!msg.late,
-      answerTimeMs
+      answerTimeMs,
+      imagePath: msg.imagePath || null,
+      imageStatus: msg.imageStatus || 'pending'
     };
 
     // Ridisegniamo la griglia
@@ -226,6 +231,37 @@
     renderPlayers();
   }
 
+  function handleAnswerImageReady(msg) {
+    const playerId = msg.playerId;
+    const playerName = msg.playerName;
+
+    const player = playersById.get(playerId);
+    if (!player) {
+      // admin che potrebbe essersi collegato dopo?
+      console.log("Se vedi questo caso allora è successo davvero.");
+      return;
+    }
+
+    if (!player.currentAnswer) {
+      // per sicurezza, creiamo un oggetto base
+      player.currentAnswer = {
+        text: '',
+        submittedAt: null,
+        submittedByTimeout: false,
+        late: false,
+        answerTimeMs: null,
+        imagePath: null,
+        imageStatus: 'pending'
+      };
+    }
+
+    player.currentAnswer.imagePath = msg.imagePath || null;
+    player.currentAnswer.imageStatus = msg.imagePath ? 'ok' : 'error';
+
+    renderPlayers();
+  }
+
+
   // --- Countdown round ---
 
   function startCountdown() {
@@ -309,8 +345,30 @@
             '<span class="badge bg-danger me-1">Oltre i 30s (entro tolleranza)</span>';
         }
 
+        if (a.imageStatus === 'pending') {
+          badges +=
+            '<span class="badge bg-info text-dark me-1">Immagine in generazione...</span>';
+        } else if (a.imageStatus === 'error') {
+          badges +=
+            '<span class="badge bg-dark me-1">Errore generazione immagine</span>';
+        }
+
         statusBadge =
           '<span class="badge bg-success">Risposta ricevuta</span>';
+
+        // Eventuale blocco immagine
+        let imageBlock = '';
+        if (a.imagePath && a.imageStatus === 'ok') {
+          imageBlock = `
+            <div class="mt-2">
+              <img
+                src="${escapeHtml(a.imagePath)}"
+                alt="Immagine generata"
+                class="img-fluid rounded border"
+              />
+            </div>
+          `;
+        }
 
         bodyHtml = `
           <p class="card-text" style="white-space: pre-wrap;">${escapeHtml(
@@ -326,6 +384,7 @@
             <br>
             ${badges}
           </div>
+          ${imageBlock}
           <button
             class="btn btn-sm btn-success mt-2 assign-win-btn"
             data-player-name="${encodeURIComponent(
