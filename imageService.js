@@ -71,29 +71,7 @@ function createImageService({ state, Round, utils }) {
           throw new Error('Risultato vuoto da Replicate');
         }
 
-        const first = result[0];
-
-        let imageBuffer;
-
-        if (typeof first === 'string') {
-          // Caso: output è una URL (alcuni modelli stable-diffusion)
-          const imageUrl = first;
-          debugImage('Scarico immagine da URL: %s', imageUrl);
-
-          const res = await fetch(imageUrl);
-          if (!res.ok) {
-            throw new Error(
-              `Download immagine fallito (${res.status} ${res.statusText})`
-            );
-          }
-          const arrayBuffer = await res.arrayBuffer();
-          imageBuffer = Buffer.from(arrayBuffer);
-        } else {
-          // Caso: output è un blob/ArrayBuffer/Binary (modelli tipo flux-schnell)
-          debugImage('Output binario ricevuto da Replicate');
-          // writeFile accetta Buffer/TypedArray/ArrayBuffer -> lo convertiamo a Buffer
-          imageBuffer = Buffer.from(first);
-        }
+        const imageContent = result[0];
 
         // 2. Salvataggio su disco
         const safeRoundId = String(roundId);
@@ -102,7 +80,7 @@ function createImageService({ state, Round, utils }) {
         const filePath = path.join(picturesDir, fileName);
         const publicPath = `/pictures/${fileName}`;
 
-        await writeFile(filePath, imageBuffer);
+        await writeFile(filePath, imageContent);
         debugImage('Immagine salvata: %s', filePath);
 
         // 3. Aggiorno il documento Round: risposta di questo player
