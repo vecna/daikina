@@ -7,15 +7,15 @@
 // -------------------------------------------
 (function () {
   const limitInput = document.getElementById('limitInput');
-  const sortInput = document.getElementById('sortInput');
-  const winnerFilterInput = document.getElementById('winnerFilterInput');
-  const applyBtn = document.getElementById('applyBtn');
+  const winnerFilterInput = document.getElementById('winnerOnlyCheckbox');
+  const applyBtn = document.getElementById('applyFiltersBtn');
   const roundsContainer = document.getElementById('roundsContainer');
 
   // Carica i round dall'API /api/rounds
   async function fetchRounds() {
     const limit = parseInt(limitInput.value, 10) || 20;
-    const sort = sortInput.value || 'desc';
+    // Hardcoded per ora ma...
+    const sort = 'desc';
     const winnerFilter = winnerFilterInput.value.trim();
 
     const params = new URLSearchParams();
@@ -26,6 +26,7 @@
       const res = await fetch('/api/rounds?' + params.toString());
       const rounds = await res.json();
 
+      console.log('Round caricati:', rounds, 'Winner filter:', winnerFilter);
       // Filtro per vincitore lato client (se impostato)
       const filtered = winnerFilter
         ? rounds.filter((r) =>
