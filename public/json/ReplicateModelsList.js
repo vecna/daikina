@@ -1,4 +1,4 @@
-[
+window.MODEL_CONFIG = [
   {
     "model": "google/imagen-4-fast",
     "updated": "2025-11-25",
@@ -6,6 +6,14 @@
     "imagesPerDollar": 50.0,
     "page": "https://replicate.com/google/imagen-4-fast",
     "description": "Use this fast version of Imagen 4 when speed and cost are more important than quality."
+  },
+  {
+    "model": "black-forest-labs/flux-schnell",
+    "updated": "2024-11-21",
+    "imagesPerDollar": 333,
+    "cost": 0.003,
+    "page": "https://replicate.com/black-forest-labs/flux-schnell",
+    "description": "Fast, efficient image variation model for rapid iteration and experimentation."
   },
   {
     "model": "google/imagen-4",

@@ -59,16 +59,23 @@ function createImageService({ state, Round, utils }) {
         playerName
       );
 
+      console.log(`Generazione immagine per round ${roundNumber}, player ${playerName} con prompt: ${prompt}`);
       try {
         const result = await replicate.run(modelToUse, {
           input: { prompt }
         });
 
-        if (!Array.isArray(result) || result.length === 0) {
-          throw new Error('Risultato vuoto da Replicate');
-        }
+        let imageContent = null;
+        if (Array.isArray(result)) {
+          imageContent = result[0];
+        } else if (result && typeof result.getReader === 'function') {
+          // Convert ReadableStream to Buffer
+          imageContent = await readableStreamToBuffer(result);
 
-        const imageContent = result[0];
+        } else {
+          console.log('Risultato da Replicate:', result);
+          throw new Error('Risultato incompensibile da Replicate');
+        }
 
         // 2. Salvataggio su disco
         const safeRoundId = String(roundId);
@@ -173,6 +180,19 @@ function createImageService({ state, Round, utils }) {
   return {
     queueImageGeneration
   };
+}
+
+// Helper: Convert ReadableStream to Buffer
+async function readableStreamToBuffer(stream) {
+  const reader = stream.getReader();
+  const chunks = [];
+  let done, value;
+  while (true) {
+    ({ done, value } = await reader.read());
+    if (done) break;
+    chunks.push(Buffer.from(value));
+  }
+  return Buffer.concat(chunks);
 }
 
 module.exports = {

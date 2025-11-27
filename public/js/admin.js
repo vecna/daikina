@@ -3,8 +3,6 @@
 (function () {
   // --- Stato locale ---
 
-  let MODEL_CONFIG = []; // verrà riempito leggendo il JSON in admin.html
-
   let currentTournamentName = null;
   let currentModelName = null;
   let tournaments = [];
@@ -150,7 +148,7 @@
   function renderModelsTable() {
     modelsTableBody.innerHTML = '';
 
-    const arr = MODEL_CONFIG.slice();
+    const arr = window.MODEL_CONFIG.slice();
 
     if (arr.length === 0) {
       modelsTableBody.innerHTML = `
@@ -436,27 +434,16 @@
   // --- Init ---
 
   (function init() {
-    // Carica JSON modelli dal <script id="model-config">
-    const configScript = document.getElementById('model-config');
-    if (configScript) {
-      try {
-        MODEL_CONFIG = JSON.parse(configScript.textContent);
-      } catch (err) {
-        console.error('Errore parsing model-config JSON:', err);
-        showAlert(
-          'Errore nel JSON dei modelli (script id="model-config").',
-          'danger',
-          0
-        );
-        MODEL_CONFIG = [];
-      }
+    // Verifica integrità del JSON dei modelli 
+    if (window.MODEL_CONFIG.length > 0) {
+      console.log('MODEL_CONFIG caricato:', window.MODEL_CONFIG);
     } else {
       showAlert(
-        'JSON dei modelli non trovato (script id="model-config").',
+        'JSON dei modelli non corretto [/public/json/README.md spiega tutto…]',
         'warning',
         0
       );
-      MODEL_CONFIG = [];
+      window.MODEL_CONFIG = [];
     }
 
     // Setup bottoni di sort (default: imagesPerDollar)
