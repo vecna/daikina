@@ -1,0 +1,51 @@
+flowchart LR
+    subgraph Browser
+      A_admin[admin.html<br/>Pannello tornei & modello]
+      A_supervisor[supervisore.html<br/>Controllo round]
+      A_gioco[gioco.html<br/>Giocatore]
+      A_risultati[risultati.html]
+      A_log[log.html]
+    end
+
+    subgraph Server
+      S_api[Express REST API]
+      S_ws[WebSocket /messages.js]
+      S_image[imageService.js<br/>Replicate client]
+      S_state[(state<br/>currentTournament,<br/>currentModel)]
+    end
+
+    subgraph DB[MongoDB]
+      M_t[Tournament]
+      M_r[Round]
+      M_a[Answer (subdoc)]
+      M_s[Score]
+      M_set[Settings]
+      M_log[EventLog]
+    end
+
+    A_admin --- S_api
+    A_supervisor --- S_ws
+    A_gioco --- S_ws
+    A_risultati --- S_api
+    A_log --- S_api
+
+    S_ws --- S_state
+    S_api --- S_state
+
+    S_ws --> M_r
+    S_ws --> M_log
+    S_api --> M_r
+    S_api --> M_s
+    S_api --> M_t
+    S_api --> M_set
+    S_api --> M_log
+
+    S_ws --> S_image
+    S_image --> M_r
+
+    subgraph Replicate
+      R_models[Modelli (Imagen / Flux / Ideogram...)]
+    end
+
+    S_image --> R_models
+

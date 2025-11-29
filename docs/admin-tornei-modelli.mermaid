@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant AdminPage as admin.html
+    participant API as Server REST /api
+    participant DB as MongoDB
+    participant State as state.current*
+
+    Note over AdminPage: Caricamento pagina
+    AdminPage->>API: GET /api/settings
+    API->>State: legge currentTournamentName,currentModelName
+    API-->>AdminPage: { currentTournamentName, currentModelName }
+
+    AdminPage->>API: GET /api/tournaments
+    API->>DB: Tournament.find()
+    API-->>AdminPage: [tournaments...]
+
+    Note over AdminPage,API: Crea & seleziona torneo
+    AdminPage->>API: POST /api/tournaments { name }
+    API->>DB: Tournament.findOneOrCreate(name)
+    API-->>AdminPage: torneo creato
+
+    AdminPage->>API: POST /api/settings<br/>{ currentTournamentName, currentModelName? }
+    API->>DB: Settings.updateOne(...)
+    API->>State: aggiorna state.currentTournamentName,<br/>state.currentModelName
+    API-->>AdminPage: conferma
+

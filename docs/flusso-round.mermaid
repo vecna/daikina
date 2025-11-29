@@ -1,0 +1,37 @@
+sequenceDiagram
+    participant Admin as Supervisore<br/>(supervisore.html)
+    participant Player1 as Giocatore 1<br/>(gioco.html)
+    participant Player2 as Giocatore 2<br/>(gioco.html)
+    participant WS as Server WS<br/>(messages.js)
+    participant IMG as imageService
+    participant DB as MongoDB
+
+    Note over Admin,WS: Inizio round
+    Admin->>WS: WS admin_round_start(text)
+    WS->>DB: Round.create({tournamentName, modelName,...})
+    WS->>Admin: WS round_start(...)
+    WS->>Player1: WS round_start(...)
+    WS->>Player2: WS round_start(...)
+
+    Note over Player1,Player2: I giocatori scrivono il prompt
+
+    Player1->>WS: WS player_answer(text)
+    Player2->>WS: WS player_answer(text)
+
+    WS->>DB: Round.updateOne(push answers[])
+    WS->>Admin: WS round_answer(...)
+    WS->>Player1: WS round_answer(...)
+    WS->>Player2: WS round_answer(...)
+
+    Note over WS,IMG: Avvio generazione immagini
+    WS->>IMG: queueImageGeneration(roundId, playerId, prompt)
+    WS->>IMG: queueImageGeneration(roundId, playerId, prompt)
+
+    IMG->>Replicate: run(modelToUse, {prompt})
+    Replicate-->>IMG: output (ReadableStream / FileOutput)
+    IMG->>IMG: converte in Buffer & salva file
+    IMG->>DB: Round.updateOne(answers.$.imagePath, imageStatus='ok')
+    IMG->>Admin: WS answer_image_ready(...)
+    IMG->>Player1: WS answer_image_ready(...)
+    IMG->>Player2: WS answer_image_ready(...)
+

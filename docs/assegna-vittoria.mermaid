@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant Admin as Supervisore
+    participant API as Server REST /api
+    participant DB as MongoDB
+    participant WS as WS broadcast
+
+    Admin->>API: POST /api/scores/increment<br/>{ playerName, roundId }
+    API->>DB: Score.findOneAndUpdate({tournamentName, playerName})
+    API->>DB: Round.updateOne($addToSet: winnerNames)
+    API->>WS: broadcast score_update(tournamentName, playerName, score)
+    WS-->>Admin: WS score_update(...)
+    WS-->>Players: WS score_update(...)
+

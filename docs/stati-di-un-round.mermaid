@@ -1,0 +1,19 @@
+stateDiagram-v2
+    [*] --> Idle
+
+    Idle --> Active : admin_round_start
+    Active --> Tolerance : scadono 30s
+    Active --> Closed : stop manuale (futuro?)
+    Tolerance --> Closed : scadono 5s
+    Active --> Closed : timeout totale (30+5) gestito lato server
+
+    state Active {
+      [*] --> CollectingAnswers
+      CollectingAnswers --> CollectingAnswers : player_answer
+    }
+
+    state Closed {
+      [*] --> Evaluating
+      Evaluating --> Finished : assegna vittoria / passa al prossimo round
+    }
+

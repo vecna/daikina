@@ -1,0 +1,72 @@
+classDiagram
+    class Tournament {
+      +ObjectId _id
+      +String name
+      +Boolean isClosed
+      +Date createdAt
+      +Date updatedAt
+    }
+
+    class Round {
+      +ObjectId _id
+      +Number roundNumber
+      +String adminText
+      +Date startTime
+      +Number durationMs
+      +Number toleranceMs
+      +ObjectId tournament
+      +String tournamentName
+      +String modelName
+      +Answer[] answers
+      +String[] winnerNames
+      +Date createdAt
+      +Date updatedAt
+    }
+
+    class Answer {
+      +String playerName
+      +String playerId
+      +String text
+      +Date submittedAt
+      +Boolean submittedByTimeout
+      +Boolean late
+      +ObjectId tournament
+      +String tournamentName
+      +String modelName
+      +String imagePath
+      +String imageStatus
+      +String imageError
+    }
+
+    class Score {
+      +ObjectId _id
+      +String tournamentName
+      +String playerName
+      +Number score
+      +Date createdAt
+      +Date updatedAt
+    }
+
+    class Settings {
+      +ObjectId _id
+      +String currentTournamentName
+      +String currentModelName
+      +Date createdAt
+      +Date updatedAt
+    }
+
+    class EventLog {
+      +ObjectId _id
+      +String type
+      +String direction
+      +String role
+      +String playerName
+      +String connectionId
+      +Object payload
+      +Date createdAt
+    }
+
+    Tournament "1" --> "0..*" Round : has
+    Round "1" --> "0..*" Answer : embeds
+    Tournament "0..*" --> "0..*" Score : by name
+
